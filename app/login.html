@@ -1,32 +1,51 @@
-<input type="text" id="username" name="username" placeholder="Enter your username">
-<input type="text" id="password" name="password" placeholder="Enter your password">
+<input type="text" id="login-username" name="username" placeholder="Enter your username">
+<input type="password" id="login-password" name="password" placeholder="Enter your password">
+<button onclick="login()">Log In</button>
+<p id="login-status"></p>
+
 <script>
-  password = document.getElementById("password");
-  password = password.value;
-  async function hashStringSHA256(message) {
-    // Encode the string as a Uint8Array
-    const msgBuffer = new TextEncoder().encode(message);
-  
-    // Hash the message using SHA-256
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  
-    // Convert the ArrayBuffer to a hex string
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
-  
-    return hashHex;
+async function hashStringSHA256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+}
+
+async function login() {
+  const username = document.getElementById("login-username").value.trim();
+  const password = document.getElementById("login-password").value;
+
+  if (!username || !password) {
+    document.getElementById("login-status").textContent = "Please fill out all fields.";
+    return;
   }
-  hashStringSHA256(password)
-  // send to the backend
-  // will change to work with the actual backend later.
-  const res = await fetch("https://example.com/userman/signup", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({username: username, password: password})
-      });
-      const text = await res.text();
-      document.getElementById("signupOutput").innerText = text;
+
+  // Hash the password before sending
+  const hashedPassword = await hashStringSHA256(password);
+
+  try {
+    const res = await fetch("https://example.com/userman/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password: hashedPassword })
+    });
+
+    if (!res.ok) {
+      document.getElementById("login-status").textContent = "Login failed. Please check your username or password.";
+      return;
+    }
+
+    const text = await res.text();
+    document.getElementById("login-status").textContent = "Login successful!";
+    
+    // Redirect after short delay
+    setTimeout(() => {
+      window.location.href = "https://alter-net-codes.github.io/alternetcodes/home";
+    }, 1000);
+
+  } catch (err) {
+    document.getElementById("login-status").textContent = "Network error, please try again.";
+    console.error(err);
   }
-  //shit
-  window.location.href = "https://alter-net-codes.github.io/alternetcodes/home";
+}
 </script>
